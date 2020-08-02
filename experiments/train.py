@@ -8,12 +8,14 @@ import pickle
 import gym
 import os
 import pylab as pyl
+import re
 
 import maddpg.common.tf_util as U
 from maddpg.trainer.maddpg import MADDPGAgentTrainer
 import tensorflow.contrib.layers as layers
 
 on_train = True
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 def parse_args():
     parser = argparse.ArgumentParser("Reinforcement Learning experiments for multiagent environments")
@@ -95,15 +97,22 @@ def train(arglist):
         # Initialize
         U.initialize()
 
+        last_episode = [0.]
+        all_episodes_before = 1000 #add for draw the tensorboard, default=1000
+        
         # Load previous results, if necessary
         if arglist.load_dir == "":
             arglist.load_dir = arglist.save_dir + arglist.exp_name + '/'
         if arglist.display or arglist.restore or arglist.benchmark:
             print('Loading previous state...')
             U.load_state(arglist.load_dir)
+        if arglist.restore:
+            last_episode = re.findall("\d+",tf.train.latest_checkpoint(arglist.load_dir))
+            print(str(last_episode[0]))
+
 
         # for load previous data to plot
-        if arglist.restore:
+        if arglist.restore and on_train is False:
             print('Reading previous learning data')
             rew_file_name = arglist.plots_dir + arglist.exp_name + '_rewards.pkl'
             with open(rew_file_name, 'rb') as fp:
@@ -199,7 +208,7 @@ def train(arglist):
                     # add for tensorboard                                                 
                     rs = sess.run(merged, feed_dict={tf_reward[i] :\
                          np.around(episode_reward_single[0][i]/arglist.max_episode_len,4) for i in range(env.n)})
-                    writer.add_summary(rs, len(episode_rewards))
+                    writer.add_summary(rs, len(episode_rewards)+int(last_episode[0])+all_episodes_before)
 
                     episode_error_single = np.zeros([env.n,4])
                     episode_reward_single = np.zeros([1,env.n])
@@ -234,7 +243,7 @@ def train(arglist):
 
             # save model, display training output
             if terminal and (len(episode_rewards) % arglist.save_rate == 0):
-                U.save_state(arglist.save_dir + arglist.exp_name + '/', saver=saver)
+                U.save_state(arglist.save_dir + arglist.exp_name + '/', len(episode_rewards), saver=saver)
                 # print statement depends on whether or not there are adversaries
                 running_time += time.time()-t_start
                 if num_adversaries == 0:

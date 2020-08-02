@@ -227,16 +227,16 @@ def load_state(fname, saver=None):
     """Load all the variables to the current session from the location <fname>"""
     if saver is None:
         saver = tf.train.Saver()
-    saver.restore(get_session(), fname)
+    saver.restore(get_session(), tf.train.latest_checkpoint(fname))
     return saver
 
 
-def save_state(fname, saver=None):
+def save_state(fname, episode_num, saver=None):
     """Save all the variables in the current session to the location <fname>"""
     os.makedirs(os.path.dirname(fname), exist_ok=True)
     if saver is None:
         saver = tf.train.Saver()
-    saver.save(get_session(), fname)
+    saver.save(get_session(), fname, global_step=episode_num)
     return saver
 
 # ================================================================

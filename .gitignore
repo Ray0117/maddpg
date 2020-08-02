@@ -107,3 +107,8 @@ venv.bak/
 # train data
 /experiments/data
 /experiments/policy
+/experiments/logs
+/experiments/tmp_policy
+
+#vscode
+/.vscode
