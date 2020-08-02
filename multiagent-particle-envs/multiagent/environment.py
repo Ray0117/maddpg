@@ -85,8 +85,8 @@ class MultiAgentEnv(gym.Env):
         info_n = {'n': []}
         self.agents = self.world.policy_agents
         # add for error
-        error_n = np.zeros([3,4])
-        reward_single = np.zeros([1,3])
+        error_n = np.zeros([self.n,4])
+        reward_single = np.zeros([1,self.n])
         # set action for each agent
         for i, agent in enumerate(self.agents):
             self._set_action(action_n[i], agent, self.action_space[i])

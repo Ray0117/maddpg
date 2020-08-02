@@ -127,21 +127,17 @@ def train(arglist):
         t_start = time.time()
 
         # add for error data
-        episode_error_sum = np.zeros([3,4])
-        episode_error_single = np.zeros([3,4])
-        episode_reward_single = np.zeros([1,3])
+        episode_error_sum = np.zeros([env.n,4])
+        episode_error_single = np.zeros([env.n,4])
+        episode_reward_single = np.zeros([1,env.n])
         running_time = 0
 
         # add for tensorboard in train mode
         if not arglist.display:
-            reward0=tf.placeholder(tf.float32)
-            reward1=tf.placeholder(tf.float32)
-            reward2=tf.placeholder(tf.float32)
-            
-            tf.summary.scalar('agent0/mean_episode_rewards' , reward0)
-            tf.summary.scalar('agent1/mean_episode_rewards' , reward1)
-            tf.summary.scalar('agent2/mean_episode_rewards' , reward2)
-
+            tf_reward = [0.] * env.n
+            for i in range(env.n):
+                tf_reward[i] = tf.placeholder(tf.float32)
+                tf.summary.scalar('agent%i/mean_episode_rewards' %i, tf_reward[i])
             merged = tf.summary.merge_all() 
             writer = tf.summary.FileWriter("logs/", sess.graph)
 
@@ -180,7 +176,7 @@ def train(arglist):
                 if not arglist.display:
                     # print("episode error:",episode_error_single/arglist.max_episode_len)
                     # print(episode_error_single.shape[0])
-                    file_name1 = ['0','0','0']
+                    file_name1 = ['0'] * env.n
                     file_name2 = arglist.data_dir + 'agent_reward_all.txt'
                     for i in range(0, episode_error_single.shape[0]):
                         file_name1[i] = arglist.data_dir + 'agent_error_' + str(i) + '.txt'
@@ -200,15 +196,13 @@ def train(arglist):
                     with open(file_name2,'a') as f:
                         f.write(reward_str)
 
-                    # add for tensorboard
-                    rs = sess.run(merged, feed_dict={reward0 : np.around(episode_reward_single[0][0]/arglist.max_episode_len,4),
-                                                     reward1 : np.around(episode_reward_single[0][1]/arglist.max_episode_len,4),
-                                                     reward2 : np.around(episode_reward_single[0][2]/arglist.max_episode_len,4)})                                                      
-                    
+                    # add for tensorboard                                                 
+                    rs = sess.run(merged, feed_dict={tf_reward[i] :\
+                         np.around(episode_reward_single[0][i]/arglist.max_episode_len,4) for i in range(env.n)})
                     writer.add_summary(rs, len(episode_rewards))
 
-                    episode_error_single = np.zeros([3,4])
-                    episode_reward_single = np.zeros([1,3])
+                    episode_error_single = np.zeros([env.n,4])
+                    episode_reward_single = np.zeros([1,env.n])
 
             # increment global step counter
             train_step += 1
