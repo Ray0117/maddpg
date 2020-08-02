@@ -80,58 +80,10 @@ def get_trainers(env, num_adversaries, obs_shape_n, arglist):
         trainers.append(trainer(
             "agent_%d" % i, model, obs_shape_n, env.action_space, i, arglist,
             local_q_func=(arglist.good_policy=='ddpg')))
-    return trainers
-
-# add for plot 
-def curve_plot(arglist):
-    rew_file_name = arglist.plots_dir + arglist.exp_name + '_rewards.pkl'
-    with open(rew_file_name, 'rb') as fp:
-        final_ep_rewards = pickle.load(fp)
-    error_file_name = arglist.plots_dir + arglist.exp_name + '_error.pkl'
-    with open(error_file_name,'rb') as fp:
-        final_error = pickle.load(fp)
-
-    print('plot learning curve for each episode...')
-    t = np.linspace(0,len(final_ep_rewards)-1,len(final_ep_rewards))
-    pyl.figure(1)
-    pyl.plot(t,final_ep_rewards)
-    pyl.xlabel('episodes')
-    pyl.ylabel('episode rewards')
-    pyl.figure(2)
-    sub1 = pyl.subplot(221) # 在图表2中创建子图1
-    sub2 = pyl.subplot(222) # 在图表2中创建子图2
-    sub3 = pyl.subplot(223)
-    sub4 = pyl.subplot(224)
-    t = np.linspace(0,len(final_error)-1,len(final_error))
-    pos_error = []
-    phi_error = []
-    w_error = []
-    collision = []
-    for i in range(len(final_error)):
-        pos_error.append(final_error[i][0,0])
-        phi_error.append(final_error[i][0,1])
-        w_error.append(final_error[i][0,2])
-        collision.append(final_error[i][0,3])
-    pyl.sca(sub1)                
-    pyl.plot(t,pos_error)
-    pyl.xlabel('episodes')
-    pyl.ylabel('pos error')
-    pyl.sca(sub2) 
-    pyl.plot(t,phi_error)
-    pyl.xlabel('episodes')
-    pyl.ylabel('phi error')
-    pyl.sca(sub3) 
-    pyl.plot(t,w_error)
-    pyl.xlabel('episodes')
-    pyl.ylabel('w error')
-    pyl.sca(sub4) 
-    pyl.plot(t,collision)
-    pyl.xlabel('episodes')
-    pyl.ylabel('collision count')
-    pyl.show()    
+    return trainers  
 
 def train(arglist):
-    with U.single_threaded_session():
+    with U.single_threaded_session() as sess:
         # Create environment
         env = make_env(arglist.scenario, arglist, arglist.benchmark)
         # Create agent trainers
@@ -179,6 +131,19 @@ def train(arglist):
         episode_error_single = np.zeros([3,4])
         episode_reward_single = np.zeros([1,3])
         running_time = 0
+
+        # add for tensorboard in train mode
+        if not arglist.display:
+            reward0=tf.placeholder(tf.float32)
+            reward1=tf.placeholder(tf.float32)
+            reward2=tf.placeholder(tf.float32)
+            
+            tf.summary.scalar('agent0/mean_episode_rewards' , reward0)
+            tf.summary.scalar('agent1/mean_episode_rewards' , reward1)
+            tf.summary.scalar('agent2/mean_episode_rewards' , reward2)
+
+            merged = tf.summary.merge_all() 
+            writer = tf.summary.FileWriter("logs/", sess.graph)
 
         print('Starting iterations...')
         while True:
@@ -234,6 +199,13 @@ def train(arglist):
                     reward_str += '\n'
                     with open(file_name2,'a') as f:
                         f.write(reward_str)
+
+                    # add for tensorboard
+                    rs = sess.run(merged, feed_dict={reward0 : np.around(episode_reward_single[0][0]/arglist.max_episode_len,4),
+                                                     reward1 : np.around(episode_reward_single[0][1]/arglist.max_episode_len,4),
+                                                     reward2 : np.around(episode_reward_single[0][2]/arglist.max_episode_len,4)})                                                      
+                    
+                    writer.add_summary(rs, len(episode_rewards))
 
                     episode_error_single = np.zeros([3,4])
                     episode_reward_single = np.zeros([1,3])
@@ -306,6 +278,53 @@ def train(arglist):
                              
                 print('...Finished total of {} episodes.'.format(len(episode_rewards)))
                 break
+# add for plot 
+def curve_plot(arglist):
+    rew_file_name = arglist.plots_dir + arglist.exp_name + '_rewards.pkl'
+    with open(rew_file_name, 'rb') as fp:
+        final_ep_rewards = pickle.load(fp)
+    error_file_name = arglist.plots_dir + arglist.exp_name + '_error.pkl'
+    with open(error_file_name,'rb') as fp:
+        final_error = pickle.load(fp)
+
+    print('plot learning curve for each episode...')
+    t = np.linspace(0,len(final_ep_rewards)-1,len(final_ep_rewards))
+    pyl.figure(1)
+    pyl.plot(t,final_ep_rewards)
+    pyl.xlabel('episodes')
+    pyl.ylabel('episode rewards')
+    pyl.figure(2)
+    sub1 = pyl.subplot(221) # 在图表2中创建子图1
+    sub2 = pyl.subplot(222) # 在图表2中创建子图2
+    sub3 = pyl.subplot(223)
+    sub4 = pyl.subplot(224)
+    t = np.linspace(0,len(final_error)-1,len(final_error))
+    pos_error = []
+    phi_error = []
+    w_error = []
+    collision = []
+    for i in range(len(final_error)):
+        pos_error.append(final_error[i][0,0])
+        phi_error.append(final_error[i][0,1])
+        w_error.append(final_error[i][0,2])
+        collision.append(final_error[i][0,3])
+    pyl.sca(sub1)                
+    pyl.plot(t,pos_error)
+    pyl.xlabel('episodes')
+    pyl.ylabel('pos error')
+    pyl.sca(sub2) 
+    pyl.plot(t,phi_error)
+    pyl.xlabel('episodes')
+    pyl.ylabel('phi error')
+    pyl.sca(sub3) 
+    pyl.plot(t,w_error)
+    pyl.xlabel('episodes')
+    pyl.ylabel('w error')
+    pyl.sca(sub4) 
+    pyl.plot(t,collision)
+    pyl.xlabel('episodes')
+    pyl.ylabel('collision count')
+    pyl.show()  
 
 if __name__ == '__main__':
     arglist = parse_args()

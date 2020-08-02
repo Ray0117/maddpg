@@ -103,3 +103,7 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# train data
+/experiments/data
+/experiments/policy
