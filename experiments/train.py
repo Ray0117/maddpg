@@ -97,8 +97,8 @@ def train(arglist):
         # Initialize
         U.initialize()
 
-        last_episode = [0.]
-        all_episodes_before = 1000 #add for draw the tensorboard, default=1000
+        last_episode = [0]
+        all_episodes_before = 0 #add for draw the tensorboard, default=1000
         
         # Load previous results, if necessary
         if arglist.load_dir == "":
@@ -107,8 +107,9 @@ def train(arglist):
             print('Loading previous state...')
             U.load_state(arglist.load_dir)
         if arglist.restore:
+            all_episodes_before = 1000
             last_episode = re.findall("\d+",tf.train.latest_checkpoint(arglist.load_dir))
-            print(str(last_episode[0]))
+            print("Last State: " + str(last_episode[0]))
 
 
         # for load previous data to plot
@@ -243,7 +244,7 @@ def train(arglist):
 
             # save model, display training output
             if terminal and (len(episode_rewards) % arglist.save_rate == 0):
-                U.save_state(arglist.save_dir + arglist.exp_name + '/', len(episode_rewards), saver=saver)
+                U.save_state(arglist.save_dir + arglist.exp_name + '/', len(episode_rewards)+int(last_episode[0]), saver=saver)
                 # print statement depends on whether or not there are adversaries
                 running_time += time.time()-t_start
                 if num_adversaries == 0:
@@ -251,11 +252,11 @@ def train(arglist):
                     #     train_step, len(episode_rewards), np.round(np.mean(episode_rewards[-arglist.save_rate:]),2), \
                     #     np.round(episode_error_sum/(arglist.save_rate*arglist.max_episode_len),2), round(time.time()-t_start, 2), round(running_time,2)))
                     print("steps: {}, episodes: {}, mean episode reward: {}, episode time: {},  running time {}".format(
-                        train_step, len(episode_rewards), np.round(np.mean(episode_rewards[-arglist.save_rate:]),2), \
+                        train_step, len(episode_rewards)+int(last_episode[0]), np.round(np.mean(episode_rewards[-arglist.save_rate:]),2), \
                         round(time.time()-t_start, 2), round(running_time,2)))
                 else:
                     print("steps: {}, episodes: {}, mean episode reward: {}, agent episode reward: {}, time: {}".format(
-                        train_step, len(episode_rewards), np.mean(episode_rewards[-arglist.save_rate:]),
+                        train_step, len(episode_rewards)+int(last_episode[0]), np.mean(episode_rewards[-arglist.save_rate:]),
                         [np.mean(rew[-arglist.save_rate:]) for rew in agent_rewards], round(time.time()-t_start, 3)))
                 t_start = time.time()
                 # Keep track of final episode reward
