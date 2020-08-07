@@ -109,6 +109,7 @@ venv.bak/
 /experiments/policy
 /experiments/logs
 /experiments/tmp_policy
+scenarios.lnk
 
 #vscode
 /.vscode
