@@ -28,7 +28,7 @@ class Scenario(BaseScenario):
         world = World()
         # set any world properties first
         world.dim_c = 2
-        num_agents = 3
+        num_agents = 5
         world.num_agents = num_agents
         num_adversaries = 0
         num_landmarks = 1
@@ -52,8 +52,8 @@ class Scenario(BaseScenario):
         for i, landmark in enumerate(world.landmarks):
             landmark.name = 'landmark %d' % i
             landmark.collide = True
-            landmark.movable = True
-            landmark.color = np.array([0.85, 0.35, 0.35])
+            landmark.movable = False
+            landmark.color = np.array([0.25, 0.25, 0.25])
         # make initial conditions
         self.reset_world(world)
         return world

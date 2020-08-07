@@ -21,6 +21,10 @@ class Scenario(BaseScenario):
         self.w_error = self.desire_w # np.fabs(-agent.max_speed - self.desire_w)
         self.count_collision = 0
         self.is_collide_avoid = True
+        self.episode_num = 0
+        self.episode_rnd = 0
+        self.agent_rnd   = 0
+        self.vel_rnd     = [0., 0.]
 
     def make_world(self):
         world = World()
@@ -74,6 +78,10 @@ class Scenario(BaseScenario):
             if not landmark.boundary:
                 landmark.state.p_pos = np.random.uniform(-0.9, +0.9, world.dim_p)
                 landmark.state.p_vel = np.zeros(world.dim_p)
+        self.episode_num = 0
+        self.episode_rnd = np.random.randint(0, 30)
+        self.agent_rnd   = np.random.randint(0, 5)
+        self.vel_rnd     = np.random.uniform(-2, 2, world.dim_p)
 
 
     def benchmark_data(self, agent, world):
@@ -148,6 +156,13 @@ class Scenario(BaseScenario):
             x = abs(agent.state.p_pos[p])
             rew -= bound(x)
 
+        if self.episode_num + self.episode_rnd < 70:
+            self.episode_num += 1
+            print(self.episode_num)
+        else:
+            print('Random Attack on agent %i' %self.agent_rnd,'vel=', self.vel_rnd)
+            world.agents[self.agent_rnd+1].color -= np.array([0.25, 0.25, 0.25]) # the victim will change color
+            agents[self.agent_rnd].state.p_vel = self.vel_rnd
         return rew
 
     def agent_reward(self, agent, world):
