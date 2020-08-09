@@ -242,7 +242,11 @@ class MultiAgentEnv(gym.Env):
             self.render_geoms = []
             self.render_geoms_xform = []
             for entity in self.world.entities:
-                geom = rendering.make_circle(entity.size)
+                # make adv has different shape
+                if 'agent 0' in entity.name:
+                    geom = rendering.make_polygon([[0.05,0.05],[0.05,-0.05],[-0.05,-0.05],[-0.05,0.05]])
+                else:
+                    geom = rendering.make_circle(entity.size)
                 xform = rendering.Transform()
                 if 'agent' in entity.name:
                     geom.set_color(*entity.color, alpha=0.5)
@@ -257,6 +261,12 @@ class MultiAgentEnv(gym.Env):
                 viewer.geoms = []
                 for geom in self.render_geoms:
                     viewer.add_geom(geom)
+
+        # add for change victim color when running
+        if self.render_geoms is not None:
+            for i, a in enumerate(self.world.agents):
+                if a.attack is True:
+                    self.render_geoms[i]._color.vec4 = (0.85, 0.35, 0.35, 0.5)
 
         results = []
         for i in range(len(self.viewers)):

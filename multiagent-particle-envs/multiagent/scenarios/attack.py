@@ -47,6 +47,7 @@ class Scenario(BaseScenario):
             #agent.accel = 20.0 if agent.adversary else 25.0
             # agent.max_speed = 1.0 if agent.adversary else 1.3
             agent.max_speed = 1.3 if agent.adversary else 1 # adv is the target
+            agent.attack = False # add for locate which is attacked
         # add landmarks
         world.landmarks = [Landmark() for i in range(num_landmarks)]
         for i, landmark in enumerate(world.landmarks):
@@ -63,7 +64,8 @@ class Scenario(BaseScenario):
     def reset_world(self, world):
         # random properties for agents
         for i, agent in enumerate(world.agents):
-            agent.color = np.array([0.35, 0.85, 0.35]) if not agent.adversary else np.array([0.85, 0.35, 0.35])
+            agent.color = np.array([0.55, 0.8, 0.95]) if not agent.adversary else np.array([0.25, 0.25, 0.25])
+            agent.attack = False
             # random properties for landmarks
         for i, landmark in enumerate(world.landmarks):
             landmark.color = np.array([0.25, 0.25, 0.25])
@@ -161,7 +163,7 @@ class Scenario(BaseScenario):
             print(self.episode_num)
         else:
             print('Random Attack on agent %i' %self.agent_rnd,'vel=', self.vel_rnd)
-            world.agents[self.agent_rnd+1].color -= np.array([0.25, 0.25, 0.25]) # the victim will change color
+            agents[self.agent_rnd].attack = True
             agents[self.agent_rnd].state.p_vel = self.vel_rnd
         return rew
 
